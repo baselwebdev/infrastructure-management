@@ -1,0 +1,18 @@
+# Ide directories
+.idea
+.vscode
+
+*.log
+*.pem
+
+.vagrant
+
+node_modules
+
+bin/*
+
+src/resources/Config.json
+src/resources/Environment.json
+src/resources/SSH.json
+
+*.zip
