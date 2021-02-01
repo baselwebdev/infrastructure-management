@@ -40,7 +40,13 @@ const cloud = new Infrastructure(
 
 switch (Yargs.argv.action) {
     case 'create':
-        cloud.create();
+        void cloud.createStack().catch(() => {
+            const errors = cloud.getErrors();
+
+            errors.forEach((error) => {
+                console.log(error.getMessage());
+            });
+        });
         break;
     case 'delete':
         cloud.delete();
