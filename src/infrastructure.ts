@@ -1,15 +1,15 @@
-import type { DescribeStackEventsInput } from '@aws-sdk/client-cloudformation/models/models_0';
+import type { CloudFormationClient, CreateStackCommandInput } from '@aws-sdk/client-cloudformation';
+import type { BaseError } from './exceptions/baseException';
 import Client from './client';
 import Config from './config';
-import type { CloudFormationClient, CreateStackCommandInput } from '@aws-sdk/client-cloudformation';
+import { CreateStackCommand } from '@aws-sdk/client-cloudformation';
+import type { DescribeStackEventsInput } from '@aws-sdk/client-cloudformation';
 import { DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
-import type { BaseError } from './exceptions/baseException';
+import { ErrorCollection } from './exceptions/errorCollection';
 import { StackCreationException } from './exceptions/stackCreationException';
 import { StackNotFoundException } from './exceptions/stackNotFoundException';
-import getCurrentLine from 'get-current-line';
 import { StackStatusRetrievingException } from './exceptions/stackStatusRetrievingException';
-import { ErrorCollection } from './exceptions/errorCollection';
-import { CreateStackCommand } from '@aws-sdk/client-cloudformation';
+import getCurrentLine from 'get-current-line';
 import { readFileSync } from './fileManager';
 
 export default class Infrastructure {
@@ -75,6 +75,30 @@ export default class Infrastructure {
         }
     }
 
+    /*
+     * Poll AWS to check the stack status.
+     * */
+    private async poll(fnCondition: { (result: string): boolean }) {
+        let result = await this.getStackStatus();
+
+        while (fnCondition(result)) {
+            await this.wait();
+            console.log(`Stack state: ${result}`);
+            result = await this.getStackStatus();
+        }
+
+        return result;
+    }
+
+    /*
+     * Make the program wait. Used for API polling to find state status.
+     * */
+    private async wait(ms = 3000) {
+        return new Promise((resolve) => {
+            setTimeout(resolve, ms);
+        });
+    }
+
     public async createStack(): Promise<void> {
         try {
             const status = await this.getStackStatus();
@@ -103,11 +127,15 @@ export default class Infrastructure {
                 TemplateBody: cloudFormationStack,
             };
             const command = new CreateStackCommand(params);
-            const data = await this.cloudformationClient.send(command).catch((error: Error) => {
+
+            await this.cloudformationClient.send(command).catch((error: Error) => {
                 throw error;
             });
+            const validate = (result: string): boolean => result !== 'CREATE_COMPLETE';
 
-            console.log(data);
+            await this.poll(validate);
+
+            console.log(`Finished creating the stack: ${this.stackName}`);
         } catch (error) {
             throw Error(error);
         }
