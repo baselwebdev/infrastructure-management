@@ -1,14 +1,17 @@
-import type { CloudFormationClient, CreateStackCommandInput } from '@aws-sdk/client-cloudformation';
+import type {
+    CloudFormationClient,
+    CreateStackCommandInput,
+    DeleteStackCommandInput,
+} from '@aws-sdk/client-cloudformation';
+import { CreateStackCommand, DeleteStackCommand } from '@aws-sdk/client-cloudformation';
 import type { BaseError } from './exceptions/baseException';
 import Client from './client';
 import Config from './config';
-import { CreateStackCommand } from '@aws-sdk/client-cloudformation';
 import type { DescribeStackEventsInput } from '@aws-sdk/client-cloudformation';
 import { DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
 import { ErrorCollection } from './exceptions/errorCollection';
 import { StackCreationException } from './exceptions/stackCreationException';
 import { StackNotFoundException } from './exceptions/stackNotFoundException';
-import { StackStatusRetrievingException } from './exceptions/stackStatusRetrievingException';
 import getCurrentLine from 'get-current-line';
 import { readFileSync } from './fileManager';
 
@@ -37,42 +40,25 @@ export default class Infrastructure {
         };
         const command = new DescribeStacksCommand(params);
 
-        try {
-            return await this.cloudformationClient
-                .send(command)
-                .then((response) => {
-                    // Although we get a response from AWS possibly returns an empty stack array
-                    // as defined in their TS definition.
-                    if (response.Stacks === undefined) {
-                        throw Error(
-                            'Not able to find the given stack. Please check your configuration are correct.',
-                        );
-                    }
+        return await this.cloudformationClient
+            .send(command)
+            .then((response) => {
+                // Although we get a response from AWS possibly returns an empty stack array
+                // as defined in their TS definition.
+                if (response.Stacks === undefined) {
+                    throw Error(
+                        'Not able to find the given stack. Please check your configuration are correct.',
+                    );
+                }
 
-                    return response.Stacks[0].StackStatus as string;
-                })
-                .catch((error: Error) => {
-                    if (error.name === 'ValidationError') {
-                        return 'NOT_FOUND';
-                    }
-                    throw error;
-                });
-        } catch (error) {
-            if (error instanceof StackNotFoundException) {
-                const stackStatusRetrievingFailure = new StackStatusRetrievingException(
-                    this.stackName,
-                    'Failure to retrieve the status of the given stack.',
-                    `Error thrown in file ${getCurrentLine().file} on line ${
-                        getCurrentLine().line
-                    }`,
-                );
-
-                this.errorCollection.add(stackStatusRetrievingFailure);
-
-                throw stackStatusRetrievingFailure;
-            }
-            throw Error(error);
-        }
+                return response.Stacks[0].StackStatus as string;
+            })
+            .catch((error: Error) => {
+                if (error.name === 'ValidationError') {
+                    return 'NOT_FOUND';
+                }
+                throw error;
+            });
     }
 
     /*
@@ -136,6 +122,44 @@ export default class Infrastructure {
             await this.poll(validate);
 
             console.log(`Finished creating the stack: ${this.stackName}`);
+        } catch (error) {
+            throw Error(error);
+        }
+    }
+
+    public async deleteStack(): Promise<void> {
+        const status = await this.getStackStatus();
+
+        try {
+            // Cannot delete a stack that cannot be found in AWS
+            if (status === 'NOT_FOUND') {
+                const stackCreationFailure = new StackNotFoundException(
+                    this.stackName,
+                    'Failure to find the stack to delete.',
+                    `Error thrown in file ${getCurrentLine().file} on line ${
+                        getCurrentLine().line
+                    }`,
+                );
+
+                this.errorCollection.add(stackCreationFailure);
+
+                throw stackCreationFailure;
+            }
+
+            const params: DeleteStackCommandInput = {
+                StackName: this.stackName,
+            };
+            const command = new DeleteStackCommand(params);
+
+            await this.cloudformationClient.send(command).catch((error: Error) => {
+                throw error;
+            });
+
+            const validate = (result: string): boolean => result !== 'NOT_FOUND';
+
+            await this.poll(validate);
+
+            console.log(`Finished deleting the stack: ${this.stackName}`);
         } catch (error) {
             throw Error(error);
         }
