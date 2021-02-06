@@ -34,7 +34,7 @@ export default class Infrastructure {
         return this.errorCollection.get();
     }
 
-    protected async getStackStatus(): Promise<string> {
+    public async getStackStatus(): Promise<string> {
         const params: DescribeStackEventsInput = {
             StackName: this.stackName,
         };
@@ -120,8 +120,6 @@ export default class Infrastructure {
             const validate = (result: string): boolean => result !== 'CREATE_COMPLETE';
 
             await this.poll(validate);
-
-            console.log(`Finished creating the stack: ${this.stackName}`);
         } catch (error) {
             throw Error(error);
         }
@@ -158,19 +156,8 @@ export default class Infrastructure {
             const validate = (result: string): boolean => result !== 'NOT_FOUND';
 
             await this.poll(validate);
-
-            console.log(`Finished deleting the stack: ${this.stackName}`);
         } catch (error) {
             throw Error(error);
         }
     }
-
-    // check if the stack exists if not
-    // create for the given stack
-
-    // if stack exists then
-    // delete the given stack
-
-    // if stack exists then
-    // redeploy stack by checking exists
 }

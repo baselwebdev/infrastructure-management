@@ -47,16 +47,40 @@ switch (Yargs.argv.action) {
                 console.log(error.getMessage());
             });
         });
+        console.log(`Finished creating the stack: ${Yargs.argv.stackName as string}`);
         break;
     case 'delete':
-        cloud.delete();
+        void cloud.deleteStack().catch(() => {
+            const errors = cloud.getErrors();
+
+            errors.forEach((error) => {
+                console.log(error.getMessage());
+            });
+        });
+        console.log(`Finished deleting the stack: ${Yargs.argv.stackName as string}`);
         break;
     case 'redeploy':
-        cloud.redeploy();
+        void (async () => {
+            const status = await cloud.getStackStatus();
+
+            if (status === 'NOT_FOUND') {
+                console.log('Creating the stack');
+                await cloud.createStack();
+                console.log(`Finished creating the stack: ${Yargs.argv.stackName as string}`);
+            }
+
+            if (status === 'CREATE_COMPLETE') {
+                console.log('Deleting the stack');
+                await cloud.deleteStack();
+                console.log('Creating the stack');
+                await cloud.createStack();
+                console.log(`Finished creating the stack: ${Yargs.argv.stackName as string}`);
+            }
+        })();
         break;
     default:
         console.log(Chalk.red('We could not find the infrastructure action.'));
-        throw Error(
+        console.log(
             Chalk.red('Please run the help command to find all the available action you can run.'),
         );
 }
