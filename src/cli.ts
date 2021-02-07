@@ -74,8 +74,8 @@ switch (Yargs.argv.action) {
             const status = await cloud.getStackStatus();
 
             try {
-                if (status === 'NOT_FOUND') {
-                    console.log('Creating the stack');
+                if (status === 'NOT_FOUND' || status === 'CREATE_IN_PROGRESS') {
+                    console.log('Attempt creating the stack');
                     await cloud.createStack().then(() => {
                         console.log(
                             `Finished creating the stack: ${Yargs.argv.stackName as string}`,
@@ -83,9 +83,9 @@ switch (Yargs.argv.action) {
                     });
                 }
 
-                if (status === 'CREATE_COMPLETE') {
+                if (status === 'CREATE_COMPLETE' || status === 'DELETE_IN_PROGRESS') {
                     console.log('Existing stack stack found');
-                    console.log('Deleting the stack');
+                    console.log('Attempt deleting the stack');
                     await cloud.deleteStack().then(() => {
                         console.log('Finished deleting the stack');
                         console.log('Creating the stack');

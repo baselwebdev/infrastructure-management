@@ -84,9 +84,9 @@ export default class Infrastructure {
     /*
      * Make the program wait. Used for API polling to find state status.
      * */
-    private async wait(ms = 3000) {
+    private async wait() {
         return new Promise((resolve) => {
-            setTimeout(resolve, ms);
+            setTimeout(resolve, 3000);
         });
     }
 
