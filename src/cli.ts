@@ -41,15 +41,22 @@ const cloud = new Infrastructure(
 
 switch (Yargs.argv.action) {
     case 'create':
-        void cloud.createStack().catch((error) => {
-            console.log('Create command failure');
-            if (error instanceof BaseException) {
-                console.log(error.getMessage());
-            }
-        });
-        console.log(`Finished creating the stack: ${Yargs.argv.stackName as string}`);
+        console.log('Creating the stack');
+        void cloud
+            .createStack()
+            .then(() => {
+                console.log(`Finished creating the stack: ${Yargs.argv.stackName as string}`);
+            })
+            .catch((error) => {
+                console.log('Create command failure');
+                if (error instanceof BaseException) {
+                    console.log(error.getMessage());
+                }
+            });
         break;
     case 'delete':
+        console.log('Existing stack stack found');
+        console.log('Deleting the stack');
         void cloud
             .deleteStack()
             .then(() => {

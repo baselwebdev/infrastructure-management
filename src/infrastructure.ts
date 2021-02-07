@@ -93,6 +93,20 @@ export default class Infrastructure {
     public async createStack(): Promise<void> {
         const status = await this.getStackStatus();
 
+        if (status === 'CREATE_IN_PROGRESS') {
+            console.log(
+                `Failure to create stack ${this.stackName} as it is currently in progress of being created.`,
+            );
+
+            console.log(`The current stack state: ${status}`);
+
+            const validate = (result: string): boolean => result !== 'CREATE_COMPLETE';
+
+            await this.poll(validate);
+
+            return;
+        }
+
         // If status is not NOT_FOUND we are not able to create stack with same
         // name
         if (status !== 'NOT_FOUND') {
