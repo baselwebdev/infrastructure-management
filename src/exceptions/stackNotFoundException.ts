@@ -1,12 +1,13 @@
-import type { BaseError } from './baseException';
+import { BaseException } from './baseException';
 
-export class StackNotFoundException implements BaseError {
-    name = 'Stack Not Found';
+export class StackNotFoundException extends BaseException {
+    name = 'Failure to find the stack';
     stackName: string;
     message: string;
     stack: string;
 
     constructor(stackName: string, message: string, stack: string) {
+        super();
         this.stackName = stackName;
         this.message = message;
         this.stack = stack;

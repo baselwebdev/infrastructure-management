@@ -4,13 +4,12 @@ import type {
     DeleteStackCommandInput,
 } from '@aws-sdk/client-cloudformation';
 import { CreateStackCommand, DeleteStackCommand } from '@aws-sdk/client-cloudformation';
-import type { BaseError } from './exceptions/baseException';
 import Client from './client';
 import Config from './config';
 import type { DescribeStackEventsInput } from '@aws-sdk/client-cloudformation';
 import { DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
-import { ErrorCollection } from './exceptions/errorCollection';
 import { StackCreationException } from './exceptions/stackCreationException';
+import { StackDeletionException } from './exceptions/stackDeletionException';
 import { StackNotFoundException } from './exceptions/stackNotFoundException';
 import getCurrentLine from 'get-current-line';
 import { readFileSync } from './fileManager';
@@ -19,7 +18,6 @@ export default class Infrastructure {
     protected cloudformationClient: CloudFormationClient;
     protected stackName: string;
     protected resourceDirectory: string;
-    protected errorCollection: ErrorCollection;
 
     constructor(resourceDirectory: string, stackName: string) {
         const config = new Config(resourceDirectory);
@@ -27,11 +25,6 @@ export default class Infrastructure {
         this.resourceDirectory = resourceDirectory;
         this.cloudformationClient = Client.createCloudFormationConnection(config);
         this.stackName = stackName;
-        this.errorCollection = new ErrorCollection();
-    }
-
-    public getErrors(): BaseError[] {
-        return this.errorCollection.get();
     }
 
     public async getStackStatus(): Promise<string> {
@@ -46,18 +39,30 @@ export default class Infrastructure {
                 // Although we get a response from AWS possibly returns an empty stack array
                 // as defined in their TS definition.
                 if (response.Stacks === undefined) {
-                    throw Error(
-                        'Not able to find the given stack. Please check your configuration are correct.',
+                    throw new StackNotFoundException(
+                        this.stackName,
+                        'Failure to find the stack to delete.',
+                        `Error thrown in file ${getCurrentLine().file} on line ${
+                            getCurrentLine().line
+                        }`,
                     );
                 }
 
                 return response.Stacks[0].StackStatus as string;
             })
             .catch((error: Error) => {
+                // If we receive error of ValidationError, we assume this is due
+                // due the stack name not existing in the AWS account.
                 if (error.name === 'ValidationError') {
                     return 'NOT_FOUND';
                 }
-                throw error;
+                throw new StackNotFoundException(
+                    this.stackName,
+                    'Failure to find the stack to delete.',
+                    `Error thrown in file ${getCurrentLine().file} on line ${
+                        getCurrentLine().line
+                    }`,
+                );
             });
     }
 
@@ -86,78 +91,66 @@ export default class Infrastructure {
     }
 
     public async createStack(): Promise<void> {
-        try {
-            const status = await this.getStackStatus();
+        const status = await this.getStackStatus();
 
-            // If status is not NOT_FOUND we are not able to create stack with same
-            // name
-            if (status !== 'NOT_FOUND') {
-                const stackCreationFailure = new StackCreationException(
-                    this.stackName,
-                    'Failure to create a stack as it already exist in your AWS account.',
-                    `Error thrown in file ${getCurrentLine().file} on line ${
-                        getCurrentLine().line
-                    }`,
-                );
-
-                this.errorCollection.add(stackCreationFailure);
-
-                throw stackCreationFailure;
-            }
-
-            const cloudFormationStack = JSON.stringify(
-                readFileSync(this.resourceDirectory + '/CloudFormationStack.json'),
+        // If status is not NOT_FOUND we are not able to create stack with same
+        // name
+        if (status !== 'NOT_FOUND') {
+            throw new StackCreationException(
+                this.stackName,
+                'Failure to create a stack as it already exist in your AWS account.',
+                `Error thrown in file ${getCurrentLine().file} on line ${getCurrentLine().line}`,
             );
-            const params: CreateStackCommandInput = {
-                StackName: this.stackName,
-                TemplateBody: cloudFormationStack,
-            };
-            const command = new CreateStackCommand(params);
-
-            await this.cloudformationClient.send(command).catch((error: Error) => {
-                throw error;
-            });
-            const validate = (result: string): boolean => result !== 'CREATE_COMPLETE';
-
-            await this.poll(validate);
-        } catch (error) {
-            throw Error(error);
         }
+
+        const cloudFormationStack = JSON.stringify(
+            readFileSync(this.resourceDirectory + '/CloudFormationStack.json'),
+        );
+        const params: CreateStackCommandInput = {
+            StackName: this.stackName,
+            TemplateBody: cloudFormationStack,
+        };
+        const command = new CreateStackCommand(params);
+
+        await this.cloudformationClient.send(command).catch((error: Error) => {
+            throw new StackCreationException(
+                this.stackName,
+                `Failure to create a stack. AWS: ${error.message}`,
+                `Error thrown in file ${getCurrentLine().file} on line ${getCurrentLine().line}`,
+            );
+        });
+        const validate = (result: string): boolean => result !== 'CREATE_COMPLETE';
+
+        await this.poll(validate);
     }
 
     public async deleteStack(): Promise<void> {
         const status = await this.getStackStatus();
 
-        try {
-            // Cannot delete a stack that cannot be found in AWS
-            if (status === 'NOT_FOUND') {
-                const stackCreationFailure = new StackNotFoundException(
-                    this.stackName,
-                    'Failure to find the stack to delete.',
-                    `Error thrown in file ${getCurrentLine().file} on line ${
-                        getCurrentLine().line
-                    }`,
-                );
-
-                this.errorCollection.add(stackCreationFailure);
-
-                throw stackCreationFailure;
-            }
-
-            const params: DeleteStackCommandInput = {
-                StackName: this.stackName,
-            };
-            const command = new DeleteStackCommand(params);
-
-            await this.cloudformationClient.send(command).catch((error: Error) => {
-                throw error;
-            });
-
-            const validate = (result: string): boolean => result !== 'NOT_FOUND';
-
-            await this.poll(validate);
-        } catch (error) {
-            throw Error(error);
+        // Cannot delete a stack that cannot be found in AWS
+        if (status === 'NOT_FOUND') {
+            throw new StackDeletionException(
+                this.stackName,
+                'Failure to delete a stack as it does not exist in your AWS account.',
+                `Error thrown in file ${getCurrentLine().file} on line ${getCurrentLine().line}`,
+            );
         }
+
+        const params: DeleteStackCommandInput = {
+            StackName: this.stackName,
+        };
+        const command = new DeleteStackCommand(params);
+
+        await this.cloudformationClient.send(command).catch((error: Error) => {
+            throw new StackDeletionException(
+                this.stackName,
+                `Failure to delete the stack. AWS: ${error.message}`,
+                `Error thrown in file ${getCurrentLine().file} on line ${getCurrentLine().line}`,
+            );
+        });
+
+        const validate = (result: string): boolean => result !== 'NOT_FOUND';
+
+        await this.poll(validate);
     }
 }

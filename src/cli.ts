@@ -1,3 +1,4 @@
+import { BaseException } from './exceptions/baseException';
 import Chalk from 'chalk';
 import Infrastructure from './infrastructure';
 import Yargs from 'yargs';
@@ -40,41 +41,59 @@ const cloud = new Infrastructure(
 
 switch (Yargs.argv.action) {
     case 'create':
-        void cloud.createStack().catch(() => {
-            const errors = cloud.getErrors();
-
-            errors.forEach((error) => {
+        void cloud.createStack().catch((error) => {
+            console.log('Create command failure');
+            if (error instanceof BaseException) {
                 console.log(error.getMessage());
-            });
+            }
         });
         console.log(`Finished creating the stack: ${Yargs.argv.stackName as string}`);
         break;
     case 'delete':
-        void cloud.deleteStack().catch(() => {
-            const errors = cloud.getErrors();
-
-            errors.forEach((error) => {
-                console.log(error.getMessage());
+        void cloud
+            .deleteStack()
+            .then(() => {
+                console.log(`Finished deleting the stack: ${Yargs.argv.stackName as string}`);
+            })
+            .catch((error) => {
+                console.log('Delete command failure');
+                if (error instanceof BaseException) {
+                    console.log(error.getMessage());
+                }
             });
-        });
-        console.log(`Finished deleting the stack: ${Yargs.argv.stackName as string}`);
         break;
     case 'redeploy':
         void (async () => {
             const status = await cloud.getStackStatus();
 
-            if (status === 'NOT_FOUND') {
-                console.log('Creating the stack');
-                await cloud.createStack();
-                console.log(`Finished creating the stack: ${Yargs.argv.stackName as string}`);
-            }
+            try {
+                if (status === 'NOT_FOUND') {
+                    console.log('Creating the stack');
+                    await cloud.createStack().then(() => {
+                        console.log(
+                            `Finished creating the stack: ${Yargs.argv.stackName as string}`,
+                        );
+                    });
+                }
 
-            if (status === 'CREATE_COMPLETE') {
-                console.log('Deleting the stack');
-                await cloud.deleteStack();
-                console.log('Creating the stack');
-                await cloud.createStack();
-                console.log(`Finished creating the stack: ${Yargs.argv.stackName as string}`);
+                if (status === 'CREATE_COMPLETE') {
+                    console.log('Existing stack stack found');
+                    console.log('Deleting the stack');
+                    await cloud.deleteStack().then(() => {
+                        console.log('Finished deleting the stack');
+                        console.log('Creating the stack');
+                    });
+                    await cloud.createStack().then(() => {
+                        console.log(
+                            `Finished creating the stack: ${Yargs.argv.stackName as string}`,
+                        );
+                    });
+                }
+            } catch (error) {
+                console.log('Redeploy command failure');
+                if (error instanceof BaseException) {
+                    console.log(error.getMessage());
+                }
             }
         })();
         break;
