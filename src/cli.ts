@@ -45,12 +45,13 @@ switch (Yargs.argv.action) {
         void cloud
             .createStack()
             .then(() => {
-                console.log(`Finished creating the stack: ${Yargs.argv.stackName as string}`);
+                console.log(
+                    Chalk.green(`Finished creating the stack: ${Yargs.argv.stackName as string}`),
+                );
             })
             .catch((error) => {
-                console.log('Create command failure');
                 if (error instanceof Exception) {
-                    console.log(error.getMessage());
+                    console.log(Chalk.red(error.getMessage()));
                 }
             });
         break;
@@ -60,12 +61,13 @@ switch (Yargs.argv.action) {
         void cloud
             .deleteStack()
             .then(() => {
-                console.log(`Finished deleting the stack: ${Yargs.argv.stackName as string}`);
+                console.log(
+                    Chalk.green(`Finished deleting the stack: ${Yargs.argv.stackName as string}`),
+                );
             })
             .catch((error) => {
-                console.log('Delete command failure');
                 if (error instanceof Exception) {
-                    console.log(error.getMessage());
+                    console.log(Chalk.red(error.getMessage()));
                 }
             });
         break;
@@ -78,7 +80,9 @@ switch (Yargs.argv.action) {
                     console.log('Attempt creating the stack');
                     await cloud.createStack().then(() => {
                         console.log(
-                            `Finished creating the stack: ${Yargs.argv.stackName as string}`,
+                            Chalk.green(
+                                `Finished creating the stack: ${Yargs.argv.stackName as string}`,
+                            ),
                         );
                     });
                 }
@@ -87,19 +91,21 @@ switch (Yargs.argv.action) {
                     console.log('Existing stack stack found');
                     console.log('Attempt deleting the stack');
                     await cloud.deleteStack().then(() => {
-                        console.log('Finished deleting the stack');
-                        console.log('Creating the stack');
+                        console.log(Chalk.green('Finished deleting the stack'));
+                        console.log('Attempt creating the stack');
                     });
                     await cloud.createStack().then(() => {
                         console.log(
-                            `Finished creating the stack: ${Yargs.argv.stackName as string}`,
+                            Chalk.green(
+                                `Finished creating the stack: ${Yargs.argv.stackName as string}`,
+                            ),
                         );
                     });
                 }
             } catch (error) {
                 console.log('Redeploy command failure');
                 if (error instanceof Exception) {
-                    console.log(error.getMessage());
+                    console.log(Chalk.red(error.getMessage()));
                 }
             }
         })();
