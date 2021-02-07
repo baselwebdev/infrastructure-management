@@ -4,13 +4,15 @@ import type {
     DeleteStackCommandInput,
 } from '@aws-sdk/client-cloudformation';
 import { CreateStackCommand, DeleteStackCommand } from '@aws-sdk/client-cloudformation';
+import {
+    StackCreationException,
+    StackDeletionException,
+    StackNotFoundException,
+} from './exception';
 import Client from './client';
 import Config from './config';
 import type { DescribeStackEventsInput } from '@aws-sdk/client-cloudformation';
 import { DescribeStacksCommand } from '@aws-sdk/client-cloudformation';
-import { StackCreationException } from './exceptions/stackCreationException';
-import { StackDeletionException } from './exceptions/stackDeletionException';
-import { StackNotFoundException } from './exceptions/stackNotFoundException';
 import getCurrentLine from 'get-current-line';
 import { readFileSync } from './fileManager';
 
@@ -94,12 +96,6 @@ export default class Infrastructure {
         const status = await this.getStackStatus();
 
         if (status === 'CREATE_IN_PROGRESS') {
-            console.log(
-                `Failure to create stack ${this.stackName} as it is currently in progress of being created.`,
-            );
-
-            console.log(`The current stack state: ${status}`);
-
             const validate = (result: string): boolean => result !== 'CREATE_COMPLETE';
 
             await this.poll(validate);

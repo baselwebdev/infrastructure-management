@@ -1,5 +1,5 @@
-import { BaseException } from './exceptions/baseException';
 import Chalk from 'chalk';
+import { Exception } from './exception';
 import Infrastructure from './infrastructure';
 import Yargs from 'yargs';
 
@@ -41,7 +41,7 @@ const cloud = new Infrastructure(
 
 switch (Yargs.argv.action) {
     case 'create':
-        console.log('Creating the stack');
+        console.log('Attempt creating the stack');
         void cloud
             .createStack()
             .then(() => {
@@ -49,14 +49,14 @@ switch (Yargs.argv.action) {
             })
             .catch((error) => {
                 console.log('Create command failure');
-                if (error instanceof BaseException) {
+                if (error instanceof Exception) {
                     console.log(error.getMessage());
                 }
             });
         break;
     case 'delete':
         console.log('Existing stack stack found');
-        console.log('Deleting the stack');
+        console.log('Attempt deleting the stack');
         void cloud
             .deleteStack()
             .then(() => {
@@ -64,7 +64,7 @@ switch (Yargs.argv.action) {
             })
             .catch((error) => {
                 console.log('Delete command failure');
-                if (error instanceof BaseException) {
+                if (error instanceof Exception) {
                     console.log(error.getMessage());
                 }
             });
@@ -98,7 +98,7 @@ switch (Yargs.argv.action) {
                 }
             } catch (error) {
                 console.log('Redeploy command failure');
-                if (error instanceof BaseException) {
+                if (error instanceof Exception) {
                     console.log(error.getMessage());
                 }
             }
