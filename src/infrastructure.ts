@@ -43,7 +43,7 @@ export default class Infrastructure {
                 if (response.Stacks === undefined) {
                     throw new StackNotFoundException(
                         this.stackName,
-                        'Failure to find the stack to delete.',
+                        'Failure to find the stack.',
                         `Error thrown in file ${getCurrentLine().file} on line ${
                             getCurrentLine().line
                         }`,
@@ -60,7 +60,7 @@ export default class Infrastructure {
                 }
                 throw new StackNotFoundException(
                     this.stackName,
-                    'Failure to find the stack to delete.',
+                    'Failure to find the stack.',
                     `Error thrown in file ${getCurrentLine().file} on line ${
                         getCurrentLine().line
                     }`,
