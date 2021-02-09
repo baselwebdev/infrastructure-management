@@ -73,9 +73,9 @@ switch (Yargs.argv.action) {
         break;
     case 'redeploy':
         void (async () => {
-            const status = await cloud.getStackStatus();
-
             try {
+                const status = await cloud.getStackStatus();
+
                 if (status === 'NOT_FOUND' || status === 'CREATE_IN_PROGRESS') {
                     console.log('Attempt creating the stack');
                     await cloud.createStack().then(() => {

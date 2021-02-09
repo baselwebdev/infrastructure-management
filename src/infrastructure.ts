@@ -38,26 +38,21 @@ export default class Infrastructure {
         return await this.cloudformationClient
             .send(command)
             .then((response) => {
-                // Although we get a response from AWS possibly returns an empty stack array
-                // as defined in their TS definition.
+                // It is possible to receive a response with empty stacks,
+                // which we assume is due no Stack being found in AWS.
                 if (response.Stacks === undefined) {
-                    throw new StackNotFoundException(
-                        this.stackName,
-                        'Failure to find the stack.',
-                        `Error thrown in file ${getCurrentLine().file} on line ${
-                            getCurrentLine().line
-                        }`,
-                    );
+                    return 'NOT_FOUND';
                 }
 
                 return response.Stacks[0].StackStatus as string;
             })
             .catch((error: Error) => {
-                // If we receive error of ValidationError, we assume this is due
-                // due the stack name not existing in the AWS account.
+                // If we receive error of ValidationError,
+                // we assume is due no Stack being found in AWS.
                 if (error.name === 'ValidationError') {
                     return 'NOT_FOUND';
                 }
+
                 throw new StackNotFoundException(
                     this.stackName,
                     'Failure to find the stack.',

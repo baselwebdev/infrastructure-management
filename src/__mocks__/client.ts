@@ -1,6 +1,8 @@
+import type { configFile } from '../config';
+
 export default class Client {
-    public static createCloudFormationConnection(): CloudFormationClient {
-        return new CloudFormationClient();
+    public static createCloudFormationConnection(config: configFile): CloudFormationClient {
+        return new CloudFormationClient(config.region);
     }
 }
 
@@ -11,11 +13,28 @@ interface DescribeStacksCommand {
 }
 
 class CloudFormationClient {
-    public async send(stackName: DescribeStacksCommand): Promise<any> {
+    region: string;
+
+    constructor(region: string) {
+        this.region = region;
+    }
+
+    public async send(param: DescribeStacksCommand): Promise<any> {
         return new Promise((resolve, reject) => {
-            stackName.input.StackName === 'IEXIST'
-                ? resolve({ Stacks: [{ StackStatus: 'CREATE_COMPLETE' }] })
-                : reject({ name: 'ValidationError' });
+            if (param.input.StackName === resource.name && this.region === resource.region) {
+                resolve({ Stacks: [{ StackStatus: resource.status }] });
+            } else if (this.region === resource.region) {
+                reject({ name: 'ValidationError' });
+            } else {
+                reject({ message: 'Bad config' });
+            }
         });
     }
 }
+
+// Our AWS resource state
+const resource = {
+    name: 'IEXIST',
+    status: 'CREATE_COMPLETE',
+    region: 'real-aws-region',
+};
