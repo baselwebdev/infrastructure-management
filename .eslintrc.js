@@ -51,6 +51,8 @@ module.exports = {
             { blankLine: 'never', prev: ['const', 'let', 'var'], next: ['const', 'let', 'var'] },
             { blankLine: 'always', prev: 'import', next: '*' },
             { blankLine: 'never', prev: 'import', next: 'import' },
+            { blankLine: 'always', prev: '*', next: 'throw' },
+            { blankLine: 'always', prev: '*', next: 'if' },
         ],
     },
 };
