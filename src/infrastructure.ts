@@ -63,30 +63,6 @@ export default class Infrastructure {
             });
     }
 
-    /*
-     * Poll AWS to check the stack status.
-     * */
-    private async poll(fnCondition: { (result: string): boolean }) {
-        let result = await this.getStackStatus();
-
-        while (fnCondition(result)) {
-            await this.wait();
-            console.log(`Stack state: ${result}`);
-            result = await this.getStackStatus();
-        }
-
-        return result;
-    }
-
-    /*
-     * Make the program wait. Used for API polling to find state status.
-     * */
-    private async wait() {
-        return new Promise((resolve) => {
-            setTimeout(resolve, 3000);
-        });
-    }
-
     public async createStack(): Promise<void> {
         const status = await this.getStackStatus();
 
@@ -157,5 +133,29 @@ export default class Infrastructure {
         const validate = (result: string): boolean => result !== 'NOT_FOUND';
 
         await this.poll(validate);
+    }
+
+    /*
+     * Poll AWS to check the stack status.
+     * */
+    private async poll(fnCondition: { (result: string): boolean }): Promise<string> {
+        let result = await this.getStackStatus();
+
+        while (fnCondition(result)) {
+            await this.wait();
+            console.log(`Stack state: ${result}`);
+            result = await this.getStackStatus();
+        }
+
+        return result;
+    }
+
+    /*
+     * Make the program wait. Used for API polling to find state status.
+     * */
+    private async wait(): Promise<void> {
+        return new Promise((resolve) => {
+            setTimeout(resolve, 3000);
+        });
     }
 }

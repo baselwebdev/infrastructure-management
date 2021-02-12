@@ -1,31 +1,65 @@
 import Infrastructure from '../src/infrastructure';
-import { StackNotFoundException } from '../src/exception';
+import {
+    StackCreationException,
+    StackDeletionException,
+    StackNotFoundException,
+} from '../src/exception';
 
 jest.mock('../src/config');
 jest.mock('../src/client');
 
-afterEach(() => {
-    jest.clearAllMocks();
+describe('getStackStatus', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('handles non existing stack correctly', async () => {
+        const cloudInfrastructure = new Infrastructure('/some/directory/', 'testStackName');
+        const result = await cloudInfrastructure.getStackStatus();
+
+        expect(result).toBe('NOT_FOUND');
+    });
+
+    it('returns correctly for existing stack', async () => {
+        const cloudInfrastructure = new Infrastructure('/some/directory/', 'IEXIST');
+        const result = await cloudInfrastructure.getStackStatus();
+
+        expect(result).toBe('CREATE_COMPLETE');
+    });
+
+    it('throws exception when wrong config is provided', () => {
+        const cloudInfrastructure = new Infrastructure('/directory/with/bad/config', 'BADSTACK');
+
+        void expect(async () => {
+            await cloudInfrastructure.getStackStatus();
+        }).rejects.toThrow(StackNotFoundException);
+    });
 });
 
-test('getStackStatus handles non existing stack correctly', async () => {
-    const infra = new Infrastructure('/some/directory/', 'testStackName');
-    const result = await infra.getStackStatus();
+describe('createStack', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
 
-    expect(result).toBe('NOT_FOUND');
+    it('throws exception on failure to create stack', () => {
+        const cloudInfrastructure = new Infrastructure('/some/directory/', 'IEXIST');
+
+        void expect(async () => {
+            await cloudInfrastructure.createStack();
+        }).rejects.toThrow(StackCreationException);
+    });
 });
 
-test('getStackStatus returns correctly for existing stack', async () => {
-    const infra = new Infrastructure('/some/directory/', 'IEXIST');
-    const result = await infra.getStackStatus();
+describe('deleteStack', () => {
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
 
-    expect(result).toBe('CREATE_COMPLETE');
-});
+    it('throws exception on failure to delete stack', () => {
+        const cloudInfrastructure = new Infrastructure('/some/directory/', 'IEXIST');
 
-test('getStackStatus throws exception when wrong config is provided', () => {
-    const infra = new Infrastructure('/directory/with/bad/config', 'BADSTACK');
-
-    void expect(async () => {
-        await infra.getStackStatus();
-    }).rejects.toThrow(StackNotFoundException);
+        void expect(async () => {
+            await cloudInfrastructure.deleteStack();
+        }).rejects.toThrow(StackDeletionException);
+    });
 });

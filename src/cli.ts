@@ -34,7 +34,7 @@ Yargs.options({
     },
 }).strict().argv;
 
-const cloud = new Infrastructure(
+const cloudInfrastructure = new Infrastructure(
     Yargs.argv.resourceDirectory as string,
     Yargs.argv.stackName as string,
 );
@@ -42,7 +42,7 @@ const cloud = new Infrastructure(
 switch (Yargs.argv.action) {
     case 'create':
         console.log('Attempt creating the stack');
-        void cloud
+        void cloudInfrastructure
             .createStack()
             .then(() => {
                 console.log(
@@ -58,7 +58,7 @@ switch (Yargs.argv.action) {
     case 'delete':
         console.log('Existing stack stack found');
         console.log('Attempt deleting the stack');
-        void cloud
+        void cloudInfrastructure
             .deleteStack()
             .then(() => {
                 console.log(
@@ -74,11 +74,11 @@ switch (Yargs.argv.action) {
     case 'redeploy':
         void (async () => {
             try {
-                const status = await cloud.getStackStatus();
+                const status = await cloudInfrastructure.getStackStatus();
 
                 if (status === 'NOT_FOUND' || status === 'CREATE_IN_PROGRESS') {
                     console.log('Attempt creating the stack');
-                    await cloud.createStack().then(() => {
+                    await cloudInfrastructure.createStack().then(() => {
                         console.log(
                             Chalk.green(
                                 `Finished creating the stack: ${Yargs.argv.stackName as string}`,
@@ -90,11 +90,11 @@ switch (Yargs.argv.action) {
                 if (status === 'CREATE_COMPLETE' || status === 'DELETE_IN_PROGRESS') {
                     console.log('Existing stack stack found');
                     console.log('Attempt deleting the stack');
-                    await cloud.deleteStack().then(() => {
+                    await cloudInfrastructure.deleteStack().then(() => {
                         console.log(Chalk.green('Finished deleting the stack'));
                         console.log('Attempt creating the stack');
                     });
-                    await cloud.createStack().then(() => {
+                    await cloudInfrastructure.createStack().then(() => {
                         console.log(
                             Chalk.green(
                                 `Finished creating the stack: ${Yargs.argv.stackName as string}`,
@@ -104,6 +104,7 @@ switch (Yargs.argv.action) {
                 }
             } catch (error) {
                 console.log('Redeploy command failure');
+
                 if (error instanceof Exception) {
                     console.log(Chalk.red(error.getMessage()));
                 }
