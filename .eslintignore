@@ -1,6 +1,7 @@
-# don't ever lint node_modules
+# Vendor
 node_modules
-# don't lint build output
+# Output
 bin
+# Configs
 .eslintrc.js
-resources
+jest.config.js

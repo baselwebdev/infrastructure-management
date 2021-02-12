@@ -7,7 +7,7 @@ module.exports = {
     },
     plugins: ['@typescript-eslint', 'prettier'],
     extends: [
-        "eslint:recommended",
+        'eslint:recommended',
         'plugin:@typescript-eslint/recommended',
         'plugin:@typescript-eslint/recommended-requiring-type-checking',
         'plugin:prettier/recommended',
@@ -51,6 +51,8 @@ module.exports = {
             { blankLine: 'never', prev: ['const', 'let', 'var'], next: ['const', 'let', 'var'] },
             { blankLine: 'always', prev: 'import', next: '*' },
             { blankLine: 'never', prev: 'import', next: 'import' },
+            { blankLine: 'always', prev: '*', next: 'throw' },
+            { blankLine: 'always', prev: '*', next: 'if' },
         ],
     },
 };

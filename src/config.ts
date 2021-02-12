@@ -1,7 +1,7 @@
 import Chalk from 'chalk';
 import { readFileSync } from './fileManager';
 
-interface configFile {
+export interface configFile {
     region: string;
     accessKeyId: string;
     secretAccessKey: string;
