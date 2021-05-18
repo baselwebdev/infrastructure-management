@@ -108,6 +108,7 @@ switch (Yargs.argv.action) {
                 if (error instanceof Exception) {
                     console.log(Chalk.red(error.getMessage()));
                 }
+                process.exitCode = 1;
             }
         })();
         break;
