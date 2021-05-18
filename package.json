@@ -3,9 +3,9 @@
   "version": "2.0.0",
   "main": "dist/infrastructure-management.js",
   "bin": {
-    "repo-retriever": "dist/cli.js"
+    "infrastructure-management": "dist/cli.js"
   },
-  "types": "dist/softwareOrchestration.d.ts",
+  "types": "dist/infrastructure.d.ts",
   "scripts": {
     "build": "npx tsc -p tsconfig.json",
     "lint": "npx eslint --fix \"src/**\"",
