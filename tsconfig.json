@@ -3,7 +3,7 @@
     /* Basic Options */
     "target": "ESNext",
     "module": "CommonJS",
-    "outDir": "bin",
+    "outDir": "dist",
     "moduleResolution": "node",
     "esModuleInterop": true,
     "sourceMap": true,
@@ -12,6 +12,8 @@
       "dom"
     ],
     "incremental": true,
+    /* Publication purpose*/
+    "declaration": true,
     /* Strict Type-Checking Options */
     "strict": true,
     "noImplicitAny": true,
@@ -26,6 +28,5 @@
   },
   "include": [
     "src/**/*",
-    "tests/**/*"
   ]
 }

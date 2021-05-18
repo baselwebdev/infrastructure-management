@@ -1,6 +1,11 @@
 {
   "name": "infrastructure-management",
   "version": "2.0.0",
+  "main": "dist/infrastructure-management.js",
+  "bin": {
+    "repo-retriever": "dist/cli.js"
+  },
+  "types": "dist/softwareOrchestration.d.ts",
   "scripts": {
     "build": "npx tsc -p tsconfig.json",
     "lint": "npx eslint --fix \"src/**\"",
