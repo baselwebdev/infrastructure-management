@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import Chalk from 'chalk';
 import { Exception } from './exception';
 import Infrastructure from './infrastructure';

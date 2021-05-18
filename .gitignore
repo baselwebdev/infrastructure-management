@@ -9,7 +9,7 @@
 
 node_modules
 
-bin/*
+dist/*
 
 src/resources/Config.json
 src/resources/Environment.json

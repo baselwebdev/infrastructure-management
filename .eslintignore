@@ -1,7 +1,7 @@
 # Vendor
 node_modules
 # Output
-bin
+dist
 # Configs
 .eslintrc.js
 jest.config.js

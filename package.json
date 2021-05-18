@@ -1,6 +1,11 @@
 {
   "name": "infrastructure-management",
   "version": "2.0.0",
+  "main": "dist/infrastructure-management.js",
+  "bin": {
+    "infrastructure-management": "dist/cli.js"
+  },
+  "types": "dist/infrastructure.d.ts",
   "scripts": {
     "build": "npx tsc -p tsconfig.json",
     "lint": "npx eslint --fix \"src/**\"",
